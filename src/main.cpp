@@ -1,8 +1,10 @@
-#include <iostream>
-#include <string>
-#include <fstream>
+#include "stb_image.h"
+#include <SFML/Graphics.hpp>
 #include <filesystem>
-#include <unordered_map>
+#include <vector>
+#include <random>
+#include <string>
+#include <iostream>
 
 int main()
 {
