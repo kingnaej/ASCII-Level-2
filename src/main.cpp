@@ -1,76 +1,89 @@
 #include <iostream>
 #include "stb_image.h"
-#include <SFML/Graphics.hpp>   // tu l'as inclus, on le garde pour plus tard si tu veux afficher l'image normalement
-#include <string>
-#include <filesystem>
-#include <vector>
-#include <random>
 #include <string>
 #include <limits>
-
-// ====================== PARAMÈTRES DE L'ASCII ART ======================
-const std::string RAMP = " .:-=+*#%@";   // du plus clair (espace) au plus foncé (@)
-// Plus il y a de caractères, plus c'est détaillé (tu peux en ajouter)
+#include <random>
+#include <SFML/Graphics.hpp>
 
 int main()
 {
-    int width, height, channels;   // noms standards (plus clair que hauteur/largeur)
+    int width, height, channels;
 
-    // Chargement de l'image
-    unsigned char* image = stbi_load("../../assets/KN.jpeg", &width, &height, &channels, 0);
+    unsigned char* image = stbi_load("../../assets/basket.jpg", &width, &height, &channels, 0);
     if (!image) {
-        std::cerr << "Erreur de chargement : " << stbi_failure_reason() << "\n";
+        std::cerr << "Erreur : " << stbi_failure_reason() << "\n";
         return 1;
     }
 
-    // ====================== CONFIGURATION ASCII ======================
-    const int OUTPUT_WIDTH = 210;                    // nombre de caractères par ligne (ajuste selon ta console)
-    // On calcule la hauteur en gardant les proportions + correction aspect ratio
-    // (les caractères sont environ 2 fois plus hauts que larges)
+    std::cout << "Image : " << width << "x" << height << " (" << channels << " canaux)\n\n";
+
+    // ====================== CONFIGURATION ======================
+    const int OUTPUT_WIDTH = 210;                    // Largeur en caractères (change selon ta console)
+    const int BLOCK_SIZE = 2;                        // 2 = bloc 2x2, 4 = bloc 4x4 (plus doux mais plus lent)
+
+    // Calcul de la hauteur en gardant les proportions + correction terminal (caractères plus hauts que larges)
     int output_height = static_cast<int>(
-        (static_cast<double>(height) / width) * OUTPUT_WIDTH * 0.5
+        (static_cast<double>(height) / width) * OUTPUT_WIDTH * 0.55   // 0.55 au lieu de 0.5 → souvent mieux
     );
     if (output_height < 1) output_height = 1;
 
-    // ====================== AFFICHAGE ASCII ======================
+    const std::string RAMP = " .:-=+*#%@";   // Rampe simple pour commencer
+
+    // ====================== GÉNÉRATION ASCII ======================
     for (int ascii_y = 0; ascii_y < output_height; ++ascii_y) {
         for (int ascii_x = 0; ascii_x < OUTPUT_WIDTH; ++ascii_x) {
 
-            // On prend un pixel représentatif dans l'image originale
-            // (sous-échantillonnage = on ne prend pas tous les pixels)
-            const int pixel_x = (ascii_x * width) / OUTPUT_WIDTH;
-            const int pixel_y = (ascii_y * height) / output_height;
+            // Coordonnées du bloc dans l'image originale
+            int start_x = (ascii_x * width) / OUTPUT_WIDTH;
+            int start_y = (ascii_y * height) / output_height;
 
-            // Calcul de l'index dans le tableau de pixels
-            const int index = (pixel_y * width + pixel_x) * channels;
+            // On va additionner tous les pixels du bloc
+            long long sum_r = 0, sum_g = 0, sum_b = 0;
+            int pixel_count = 0;
 
-            unsigned char gray;   // valeur de luminosité 0 (noir) → 255 (blanc)
+            // Boucle sur le bloc (ex: 2x2)
+            for (int dy = 0; dy < BLOCK_SIZE; ++dy) {
+                for (int dx = 0; dx < BLOCK_SIZE; ++dx) {
+                    int px = start_x + dx;
+                    int py = start_y + dy;
 
-            if (channels == 1) {
-                // Image déjà en niveaux de gris
-                gray = image[index];
-            } else {
-                // Image couleur (RGB ou RGBA)
-                const unsigned char r = image[index];
-                const unsigned char g = image[index + 1];
-                unsigned char const b = image[index + 2];
+                    // On reste dans les limites de l'image
+                    if (px >= width || py >= height) continue;
 
-                // Formule de luminance (pondération selon l'œil humain)
-                gray = static_cast<unsigned char>(0.299 * r + 0.587 * g + 0.114 * b);
+                    int index = (py * width + px) * channels;
+
+                    if (channels >= 3) {
+                        sum_r += image[index];
+                        sum_g += image[index + 1];
+                        sum_b += image[index + 2];
+                    } else {
+                        // Image en niveaux de gris
+                        sum_r += image[index];
+                        sum_g += image[index];
+                        sum_b += image[index];
+                    }
+                    pixel_count++;
+                }
             }
 
-            // Mapping luminosité → caractère de la rampe
-            const size_t ramp_index = static_cast<size_t>((255 - gray) * RAMP.size() / 256);
+            // Moyenne des couleurs
+            unsigned char const r = (pixel_count > 0) ? static_cast<unsigned char>(sum_r / pixel_count) : 0;
+            unsigned char const g = (pixel_count > 0) ? static_cast<unsigned char>(sum_g / pixel_count) : 0;
+            unsigned char const b = (pixel_count > 0) ? static_cast<unsigned char>(sum_b / pixel_count) : 0;
+
+            // Conversion en gris (luminosité perçue par l'œil)
+            unsigned char const gray = static_cast<unsigned char>(0.299 * r + 0.587 * g + 0.114 * b);
+
+            // Choix du caractère selon la luminosité
+            size_t ramp_index = static_cast<size_t>((255 - gray) * RAMP.size() / 256);
             std::cout << RAMP[ramp_index];
         }
-        std::cout << "\n";   // fin de ligne
+        std::cout << "\n";
     }
 
     stbi_image_free(image);
 
-    std::cout << "\nProgramme termine.\n";
-    std::cout << "Appuyer sur Entrer pour fermer...\n";
+    std::cout << "\nTermine ! Appuie sur Entree...\n";
     std::cin.get();
-
     return 0;
 }
