@@ -1,17 +1,17 @@
 #include <iostream>
 #include "stb_image.h"
 #include <string>
-#include <limits>
 #include <random>
-#include <SFML/Graphics.hpp>
 #include <filesystem>
 #include <map>
 #include <algorithm>
 #include <cctype>
+#include <complex>
 
-int main()
+int main(int argc, char* argv[])
 {
-    std::string const folderPath = "../../assets";
+
+    std::string const folderPath = "assets";
     std::map<int, std::filesystem::path> files;
     if (std::filesystem::exists(folderPath)) {
         int file_count = 0;
@@ -50,23 +50,23 @@ int main()
 
     std::random_device random_device;
     std::mt19937 random_engine(random_device());
-    std::uniform_int_distribution<int> distribution(0, static_cast<int>(files.size()) - 1);
+    std::uniform_int_distribution distribution(0, static_cast<int>(files.size()) - 1);
 
     // PARTIE GENERATEUR DE CODE ASCII
 
-    const std::string RAMP = " .:-=+*#%@";
+    std::string RAMP = " .:-=+*#%@";
     int width, height, channels;
 
     auto const keyFile = distribution(random_engine);
     const auto file = files.at(keyFile).string();
 
-    unsigned char* image = stbi_load(file.c_str(), &width, &height, &channels, 0);
+    const auto image = stbi_load(file.c_str(), &width, &height, &channels, 0);
     if (!image) {
         std::cerr << "Erreur : " << stbi_failure_reason() << "\n";
         return 1;
     }
 
-    int const OUTPUTWIDTH = 210;
+    int OUTPUTWIDTH = 210;
     int OUTPUTHEIGHT = static_cast<int>(
         static_cast<double> (height / width) * OUTPUTWIDTH * 0.55
     );
@@ -74,7 +74,7 @@ int main()
 
     for (auto ascii_y = 0; ascii_y < OUTPUTHEIGHT; ++ascii_y) {
         for (auto ascii_x = 0; ascii_x < OUTPUTWIDTH; ++ascii_x) {
-            int const BLOCK = 2;
+            int BLOCK = 2;
             int const start_x = (ascii_x * width) / OUTPUTWIDTH;
             int const start_y = (ascii_y * height) / OUTPUTHEIGHT;
 
@@ -108,7 +108,7 @@ int main()
             unsigned const char g = pixel_count > 0 ? static_cast<unsigned char>(sum_g / pixel_count) : 0;
             unsigned const char b = pixel_count > 0 ? static_cast<unsigned char>(sum_b / pixel_count) : 0;
 
-            unsigned const char gray = static_cast<unsigned char>(0.299 * r + 0.587 * g + 0.114 * b);
+            auto const gray = static_cast<unsigned char>(0.299 * r + 0.587 * g + 0.114 * b);
             size_t const ramp_index = (255 - gray) * RAMP.size() / 256;
             std::cout << RAMP[ramp_index];
         }
