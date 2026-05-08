@@ -31,10 +31,10 @@ N.B : VOUS POUVEZ AJOUTER VOS IMAGES DANS LE DOSSIER 'ASSETS' POUR VOIR VOS IMAG
 
 ### 4. LANCER L'APP
 
-    # Pour Windows
+Pour Windows
+    
+		.\dist\bin\Level2.exe
 
-		.\dist\bin\SchoolTerminal.exe
+Linux / macOS
 
-	# Linux / macOS
-
-		./dist/bin/SchoolTerminal
+		./dist/bin/Level2
