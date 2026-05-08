@@ -23,8 +23,7 @@ int main(int argc, char* argv[])
 
     // 3. Sécurité : Créer le dossier s'il n'existe nulle part
     if (!std::filesystem::exists(dataPath)) {
-        std::filesyste
-        m::create_directories(dataPath);
+        std::filesystem::create_directories(dataPath);
     }
 
     std::map<int, std::filesystem::path> files;
